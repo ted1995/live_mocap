@@ -63,6 +63,7 @@ class BodyKeypointTrack:
         )
         self.pose_rvec, self.pose_tvec = None, None
         self.pose_kpts2d = self.pose_kpts3d = None
+        # 关键点对应的权重矩阵
         self.barycenter_weight = np.array([WEIGHTS.get(kp, 0.) for kp in MEDIAPIPE_POSE_KEYPOINTS])
 
         self.track_hands = track_hands
@@ -87,14 +88,20 @@ class BodyKeypointTrack:
 
     def _get_camera_space_landmarks(self, image_landmarks, world_landmarks, visible, rvec, tvec):
         # get transformation matrix from world coordinate to camera coordinate
+        # 计算相机相对于世界坐标系的位姿，输出rvec为旋转向量，tvec为平移向量
         _, rvec, tvec = cv2.solvePnP(world_landmarks[visible], image_landmarks[visible], self.K, np.zeros(5), rvec=rvec, tvec=tvec, useExtrinsicGuess=rvec is not None)
+        # 将旋转向量转化为旋转矩阵
         rmat, _ = cv2.Rodrigues(rvec)
         
         # get camera coordinate of all keypoints
+        # 将所有点转化到相机坐标系中
         kpts3d_cam = world_landmarks @ rmat.T + tvec.T
 
         # force projected x, y to be identical to visibile image_landmarks
+        # 去除所有坐标的z值，转化为n行1列的数组
         kpts3d_cam_z = kpts3d_cam[:, 2].reshape(-1, 1)
+        # (np.concatenate([image_landmarks, np.ones((image_landmarks.shape[0], 1))], axis=1) [1,2] -> [1,2,1]
+
         kpts3d_cam[:, :2] =  (np.concatenate([image_landmarks, np.ones((image_landmarks.shape[0], 1))], axis=1) @ np.linalg.inv(self.K).T * kpts3d_cam_z)[:, :2]
         return kpts3d_cam, rvec, tvec
 
