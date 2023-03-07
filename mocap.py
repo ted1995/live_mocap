@@ -9,6 +9,7 @@ import shutil
 import argparse
 import pickle
 import subprocess
+import json
 
 import numpy as np
 import cv2
@@ -36,6 +37,16 @@ def main():
     os.system(f"blender {args.blend} --background --python export_skeleton.py")
     if not os.path.exists('tmp/skeleton'):
         raise Exception("Skeleton export failed")
+    
+    with open("tmp/skeleton/skeleton.json",'r') as f:
+        js = json.load(f)
+    with open("model/%s.json" % args.blend.split("/")[-1].split(".")[0],'r') as f:
+        js1 = json.load(f)
+        
+    js['bone_remap'] = js1["bone_remap"]
+
+    with open("tmp/skeleton/skeleton.json",'w') as f:
+        f.write(json.dumps(js,indent=4))
 
     # Open the video capture
     cap = cv2.VideoCapture(args.video)
