@@ -86,8 +86,11 @@ class SkeletonIKSolver:
         self.keypoints = MEDIAPIPE_KEYPOINTS_WITH_HANDS if track_hands else MEDIAPIPE_KEYPOINTS_WITHOUT_HANDS
 
         # skeleton structure info
+        # 所有的骨头
         self.all_bone_names: List[str] = all_bone_names
+        # 所有的骨头：父骨头的字典
         self.all_bone_parents: List[str] = all_bone_parents
+        # 父骨头在所有骨头列表中的索引
         self.all_bone_parents_id = torch.tensor([(all_bone_names.index(all_bone_parents[b]) if all_bone_parents[b] is not None else -1) for b in all_bone_parents], dtype=torch.long)
         self.all_bone_matrix: torch.Tensor = torch.from_numpy(all_bone_matrix).float()
   
