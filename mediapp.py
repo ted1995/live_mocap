@@ -5,46 +5,9 @@ import time
 import socket
 import json
 
-"""
-Nose,
-    LeftEyeInner,
-    LeftEye=2,
-    LeftEyeOuter,
-    RightEyeInner,
-    RightEye=5,
-    RightEyeOuter,
-    LeftEa=7,
-    RightEar=8,
-    LeftMouth9,
-    RightMouth10,
-    LeftShoulder11,
-    RightShoulder12,
-    LeftElbow13,
-    RightElbow14,
-    LeftWrist15,
-    RightWrist16,
-    LeftPinky17,
-    RightPinky18,
-    LeftIndex19,
-    RightIndex20,
-    LeftThump21,
-    RightThump22,
-    LeftHip23,
-    RightHip24,
-    LeftKnee25,
-    RightKnee26,
-    LeftAnkle27,
-    RightAnkle28,
-    LeftHeel29,
-    RightHeel30,
-    LeftFootIndex31,
-    RightFootIndex32,
-    Hips33,
-    Spine34,
-    Neck35,
-    Head36
+# root,spine,chest,neck,lcollar,lshld,lbow,lhand,rcollar,rshld,rbow,rhand,lhip,lknee,lfoot,ltoe,rhip,rknee,rfoot,rtoe,
 
-"""
+
 
 def landmarks_list_to_array(landmark_list):
     array = []
