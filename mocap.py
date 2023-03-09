@@ -29,6 +29,8 @@ def main():
     args = parser.parse_args()
     FOV = np.pi / 3
 
+    shutil.rmtree('tmp')
+
     # Call blender to export skeleton
     os.makedirs('tmp', exist_ok=True)
     print("Export skeleton...")
@@ -58,20 +60,26 @@ def main():
 
     # Initialize the body keypoint tracker
     body_keypoint_track = BodyKeypointTrack(
+        model_complexity=2,
         im_width=frame_width,
         im_height=frame_height,
         fov=FOV,
         frame_rate=frame_rate,
-        track_hands=args.track_hands,
-        smooth_range=10 * (1 / frame_rate),
-        smooth_range_barycenter=30 * (1 / frame_rate),
+        track_hands=False,
+        smooth_range=30 * (1 / frame_rate), #关键点平滑最近30帧
+        smooth_range_barycenter=30 * (1 / frame_rate), #质心平滑最近30帧
     )
 
     # Initialize the skeleton IK solver
     skeleton_ik_solver = SkeletonIKSolver(
         model_path='tmp/skeleton',
-        track_hands=args.track_hands,
-        smooth_range=15 * (1 / frame_rate),
+        track_hands=False,
+        max_iter = 50,
+        tolerance_change = 1e-6,
+        tolerance_grad = 1e-4,
+        joint_constraint_loss_weight = 1e-1,
+        pose_reg_loss_weight = 1e-2,   
+        smooth_range=30 * (1 / frame_rate),
     )
 
     bone_euler_sequence, scale_sequence, location_sequence = [], [], []
@@ -111,6 +119,8 @@ def main():
         frame_i += 1
         frame_t += 1.0 / frame_rate
         bar.update(1)
+        if frame_i >300:
+            break
 
     # Save animation result
     print("Save animation result...")

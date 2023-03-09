@@ -81,6 +81,7 @@ def intrinsic_from_fov(fov: float, width: int, height: int) -> np.ndarray:
         [0., 0.5 / (np.tan(fov / 2) * (height / max(width, height))), 0.5],
         [0., 0., 1.],
     ], dtype=np.float32)
+    
     return normed_int * np.array([width, height, 1], dtype=np.float32).reshape(3, 1)
 
 def moving_least_square(x: torch.Tensor, y: torch.Tensor, w: torch.Tensor):
