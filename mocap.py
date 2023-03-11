@@ -10,6 +10,7 @@ import argparse
 import pickle
 import subprocess
 import json
+import socket
 
 import numpy as np
 import cv2
@@ -27,9 +28,7 @@ def main():
     parser.add_argument('--track_hands', action='store_true', help='Enable hand tracking')
 
     args = parser.parse_args()
-    FOV = np.pi / 3
-
-    shutil.rmtree('tmp')
+    FOV = np.pi / 4
 
     # Call blender to export skeleton
     os.makedirs('tmp', exist_ok=True)
@@ -40,15 +39,15 @@ def main():
     if not os.path.exists('tmp/skeleton'):
         raise Exception("Skeleton export failed")
     
-    with open("tmp/skeleton/skeleton.json",'r') as f:
-        js = json.load(f)
-    with open("model/%s.json" % args.blend.split("/")[-1].split(".")[0],'r') as f:
-        js1 = json.load(f)
+    # with open("tmp/skeleton/skeleton.json",'r') as f:
+    #     js = json.load(f)
+    # with open("model/%s.json" % args.blend.split("/")[-1].split(".")[0],'r') as f:
+    #     js1 = json.load(f)
         
-    js['bone_remap'] = js1["bone_remap"]
+    # js['bone_remap'] = js1["bone_remap"]
 
-    with open("tmp/skeleton/skeleton.json",'w') as f:
-        f.write(json.dumps(js,indent=4))
+    # with open("tmp/skeleton/skeleton.json",'w') as f:
+    #     f.write(json.dumps(js,indent=4))
 
     # Open the video capture
     cap = cv2.VideoCapture(args.video)
@@ -66,7 +65,7 @@ def main():
         fov=FOV,
         frame_rate=frame_rate,
         track_hands=False,
-        smooth_range=30 * (1 / frame_rate), #关键点平滑最近30帧
+        smooth_range=10 * (1 / frame_rate), #关键点平滑最近30帧
         smooth_range_barycenter=30 * (1 / frame_rate), #质心平滑最近30帧
     )
 
@@ -74,12 +73,12 @@ def main():
     skeleton_ik_solver = SkeletonIKSolver(
         model_path='tmp/skeleton',
         track_hands=False,
-        max_iter = 50,
+        max_iter = 10,
         tolerance_change = 1e-6,
         tolerance_grad = 1e-4,
         joint_constraint_loss_weight = 1e-1,
         pose_reg_loss_weight = 1e-2,   
-        smooth_range=30 * (1 / frame_rate),
+        smooth_range=10 * (1 / frame_rate),
     )
 
     bone_euler_sequence, scale_sequence, location_sequence = [], [], []
@@ -119,9 +118,29 @@ def main():
         frame_i += 1
         frame_t += 1.0 / frame_rate
         bar.update(1)
-        if frame_i >300:
+        if frame_i >200:
             break
 
+        strlist = []
+        for b in bone_euler:
+            tb = b.tolist()
+            strl = ",".join([str(tb[i]) for i in range(0,3)])
+            strlist.append(strl)
+        # for i in skeleton_ik_solver.optimizable_bones:
+        #     if i == "Left shoulder":
+        #         print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
+
+        res = ",".join(strlist)
+
+        #print(res)
+
+        socket_send = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+
+        server_add = ("127.0.0.1",5000)
+        socket_send.sendto(res.encode('utf-8'),server_add)
+    
+    print(skeleton_ik_solver.optimizable_bones)
+    
     # Save animation result
     print("Save animation result...")
     with open('tmp/bone_animation_data.pkl', 'wb') as fp:

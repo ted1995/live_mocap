@@ -13,7 +13,7 @@
             "justMyCode": true,
             "args" : [
                 
-                "--blend" , "model/Rin.blend",
+                "--blend" , "model/ganyu.blend",
                 "--video" , "video/ikun.mp4",
                 // "--track_hands"
 

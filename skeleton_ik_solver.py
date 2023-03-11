@@ -124,6 +124,10 @@ class SkeletonIKSolver:
         self.pose_reg_loss_weight = kwargs.get('pose_reg_loss_weight', 0.1)
         self.smooth_range = kwargs.get('smooth_range', 0.3)
 
+        print("学习率：%f",self.lr)
+        print("迭代：%f",self.max_iter)
+        print("平滑范围：%f",self.smooth_range)
+
         # optimizable bone euler angles
         self.optimizable_bones = optimizable_bones
         self.gather_id = torch.tensor([(optimizable_bones.index(b) + 1 if b in optimizable_bones else 0) for b in bone_subset], dtype=torch.long)[:, None, None].repeat(1, 4, 4)
