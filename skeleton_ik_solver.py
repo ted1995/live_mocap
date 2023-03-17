@@ -142,10 +142,10 @@ class SkeletonIKSolver:
         optimizer = torch.optim.LBFGS(
             [self.optim_bone_euler], 
             line_search_fn='strong_wolfe', 
-            lr=self.lr, 
-            max_iter=100 if len(self.euler_angle_history) == 0 else self.max_iter, 
-            tolerance_change=self.tolerance_change, 
-            tolerance_grad=self.tolerance_grad
+            lr=self.lr,
+            max_iter=self.max_iter,
+            tolerance_change= self.tolerance_change, 
+            tolerance_grad= self.tolerance_grad
         )
 
         pair_valid = valid[self.kpt_pairs_a] & valid[self.kpt_pairs_b]
@@ -171,6 +171,7 @@ class SkeletonIKSolver:
             pose_reg_loss = self.optim_bone_euler.square().mean()
             loss = dir_loss + self.pose_reg_loss_weight * pose_reg_loss + self.joint_constraint_loss_weight * joint_prior_loss 
             loss.backward()
+            #print("loss:%s"%loss)
             return loss
 
         if len(kpt_dir) > 0:

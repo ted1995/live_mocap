@@ -11,6 +11,8 @@ import pickle
 import subprocess
 import json
 import socket
+import mathutils
+import math
 
 import numpy as np
 import cv2
@@ -28,7 +30,7 @@ def main():
     parser.add_argument('--track_hands', action='store_true', help='Enable hand tracking')
 
     args = parser.parse_args()
-    FOV = np.pi / 4
+    FOV = np.pi / 3
 
     # Call blender to export skeleton
     os.makedirs('tmp', exist_ok=True)
@@ -59,26 +61,27 @@ def main():
 
     # Initialize the body keypoint tracker
     body_keypoint_track = BodyKeypointTrack(
-        model_complexity=2,
+        model_complexity=1,
         im_width=frame_width,
         im_height=frame_height,
         fov=FOV,
         frame_rate=frame_rate,
         track_hands=False,
         smooth_range=10 * (1 / frame_rate), #关键点平滑最近30帧
-        smooth_range_barycenter=30 * (1 / frame_rate), #质心平滑最近30帧
+        # smooth_range_barycenter=10 * (1 / frame_rate), #质心平滑最近30帧
     )
 
     # Initialize the skeleton IK solver
     skeleton_ik_solver = SkeletonIKSolver(
         model_path='tmp/skeleton',
         track_hands=False,
-        max_iter = 10,
-        tolerance_change = 1e-6,
-        tolerance_grad = 1e-4,
+        max_iter = 20, #最大迭代次数，表示LBFGS优化器最多迭代的次数。建议将最大迭代次数设置为20到100之间。目前测试无论设置多大，都只会迭代20次。
+        lr = 1, #学习率，表示每次迭代更新的步长。LBFGS优化器不需要学习率调度器，因此只需要指定一个固定的学习率即可。建议将学习率设置为1，即默认值。
+        tolerance_change = 1e-9, #变化容差，表示LBFGS优化器停止迭代的变化容差。建议将变化容差设置为1e-9到1e-12之间。
+        tolerance_grad = 1e-5, #梯度容差，表示LBFGS优化器停止迭代的梯度容差。建议将梯度容差设置为1e-5到1e-9之间。
         joint_constraint_loss_weight = 1e-1,
         pose_reg_loss_weight = 1e-2,   
-        smooth_range=10 * (1 / frame_rate),
+        smooth_range=10 * (1 / frame_rate), #MLS平滑的范围，可以平滑人物运动，但是设置太大会吃动作。
     )
 
     bone_euler_sequence, scale_sequence, location_sequence = [], [], []
@@ -126,9 +129,9 @@ def main():
             tb = b.tolist()
             strl = ",".join([str(tb[i]) for i in range(0,3)])
             strlist.append(strl)
-        # for i in skeleton_ik_solver.optimizable_bones:
-        #     if i == "Left shoulder":
-        #         print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
+        for i in skeleton_ik_solver.optimizable_bones:
+            if i == "left_hip":
+                print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
 
         res = ",".join(strlist)
 
@@ -139,7 +142,7 @@ def main():
         server_add = ("127.0.0.1",5000)
         socket_send.sendto(res.encode('utf-8'),server_add)
     
-    print(skeleton_ik_solver.optimizable_bones)
+    # print(skeleton_ik_solver.optimizable_bones)
     
     # Save animation result
     print("Save animation result...")

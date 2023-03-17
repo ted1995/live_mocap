@@ -81,7 +81,7 @@ class BodyKeypointTrack:
         
         self.smooth_range = smooth_range
         self.smooth_range_barycenter = smooth_range_barycenter
-        self.barycenter_history: List[Tuple[np.ndarray, float]] = []
+        # self.barycenter_history: List[Tuple[np.ndarray, float]] = []
         self.pose_history: List[Tuple[np.ndarray, float]] = []
         self.left_hand_history: List[Tuple[np.ndarray, float]] = []
         self.right_hand_history: List[Tuple[np.ndarray, float]] = []
@@ -127,7 +127,7 @@ class BodyKeypointTrack:
         self.barycenter = np.average(kpts3d, axis=0, weights=self.barycenter_weight)
         self.pose_kpts3d = kpts3d - self.barycenter
         self.pose_rvec, self.pose_tvec = rvec, tvec
-        self.barycenter_history.append((self.barycenter, t))
+        # self.barycenter_history.append((self.barycenter, t))
         self.pose_history.append((kpts3d, t))
 
     def _track_hands(self, image: np.ndarray, t: float):
@@ -181,13 +181,13 @@ class BodyKeypointTrack:
             self._track_hands(image, frame_t)
 
     def get_smoothed_3d_keypoints(self, query_t: float):
-        # Get smoothed barycenter
-        barycenter_list = [barycenter for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
-        barycenter_t = [t for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
-        if len(barycenter_t) == 0:
-            barycenter = np.zeros(3)
-        else:
-            barycenter = mls_smooth_numpy(barycenter_t, barycenter_list, query_t, self.smooth_range_barycenter)
+        # # Get smoothed barycenter
+        # barycenter_list = [barycenter for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
+        # barycenter_t = [t for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
+        # if len(barycenter_t) == 0:
+        #     barycenter = np.zeros(3)
+        # else:
+        #     barycenter = mls_smooth_numpy(barycenter_t, barycenter_list, query_t, self.smooth_range_barycenter)
 
         # Get smoothed pose keypoints
         pose_kpts3d_list = [kpts3d for kpts3d, t in self.pose_history if abs(t - query_t) < self.smooth_range]
