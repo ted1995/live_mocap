@@ -61,20 +61,20 @@ def main():
 
     # Initialize the body keypoint tracker
     body_keypoint_track = BodyKeypointTrack(
-        model_complexity=1,
+        model_complexity=2,
         im_width=frame_width,
         im_height=frame_height,
         fov=FOV,
         frame_rate=frame_rate,
-        track_hands=False,
+        track_hands=True,
         smooth_range=10 * (1 / frame_rate), #关键点平滑最近30帧
-        # smooth_range_barycenter=10 * (1 / frame_rate), #质心平滑最近30帧
+        smooth_range_barycenter=10 * (1 / frame_rate), #质心平滑最近30帧
     )
 
     # Initialize the skeleton IK solver
     skeleton_ik_solver = SkeletonIKSolver(
         model_path='tmp/skeleton',
-        track_hands=False,
+        track_hands=True,
         max_iter = 20, #最大迭代次数，表示LBFGS优化器最多迭代的次数。建议将最大迭代次数设置为20到100之间。目前测试无论设置多大，都只会迭代20次。
         lr = 1, #学习率，表示每次迭代更新的步长。LBFGS优化器不需要学习率调度器，因此只需要指定一个固定的学习率即可。建议将学习率设置为1，即默认值。
         tolerance_change = 1e-9, #变化容差，表示LBFGS优化器停止迭代的变化容差。建议将变化容差设置为1e-9到1e-12之间。
@@ -121,7 +121,9 @@ def main():
         frame_i += 1
         frame_t += 1.0 / frame_rate
         bar.update(1)
-        if frame_i >200:
+        if frame_i == 370:
+            print("comming")
+        if frame_i >500:
             break
 
         strlist = []
@@ -129,11 +131,16 @@ def main():
             tb = b.tolist()
             strl = ",".join([str(tb[i]) for i in range(0,3)])
             strlist.append(strl)
-        for i in skeleton_ik_solver.optimizable_bones:
-            if i == "left_hip":
-                print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
+        location = location.tolist()
+        print(location)
+        str1 = ",".join([str(location[i]) for i in range(0,3)])
+        strlist.append(str1)
+        # for i in skeleton_ik_solver.optimizable_bones:
+        #     if i == "left_hip":
+        #         print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
 
         res = ",".join(strlist)
+        
 
         #print(res)
 
