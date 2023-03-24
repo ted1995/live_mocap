@@ -135,9 +135,9 @@ def main():
         print(location)
         str1 = ",".join([str(location[i]) for i in range(0,3)])
         strlist.append(str1)
-        # for i in skeleton_ik_solver.optimizable_bones:
-        #     if i == "left_hip":
-        #         print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
+        for i in skeleton_ik_solver.optimizable_bones:
+            if i == "left_index1":
+                print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
 
         res = ",".join(strlist)
         

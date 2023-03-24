@@ -57,16 +57,17 @@ for i in range(len(bone_euler_sequence)):
         # if b == 'left_collar' or b == 'left_shoulder' or b == 'left_elbow':
         # if b == 'pelvis' or b == 'spine1' or b == 'spine2' or b == 'spine3' or b == 'left_collar' or b == 'left_shoulder' or b == 'left_elbow' or b == 'right_collar' or b == 'right_shoulder' or b == 'right_elbow':
         # if b == 'left_hip' or b == "left_knee" or b == "left_ankle":
+        # if b == 'left_wrist' or b == 'left_index1' or b == 'left_index2' or b == 'left_index2':
             bone = skeleton.pose.bones[b]
             bone.rotation_mode = 'YXZ'
             bone.rotation_euler = bone_euler_sequence[i][j].tolist()
             bone.keyframe_insert(data_path='rotation_euler', frame=i)
     
     # global location
-    x, y, z = location_sequence[i].tolist()
-    # x,y,z是mediapipe的关键点检测，x向右，y向下，z向外
-    skeleton.location = x, z, -y
-    skeleton.keyframe_insert(data_path='location', frame=i)
+    # x, y, z = location_sequence[i].tolist()
+    # # x,y,z是mediapipe的关键点检测，x向右，y向下，z向外
+    # skeleton.location = x, z, -y
+    # skeleton.keyframe_insert(data_path='location', frame=i)
 
 
 

@@ -71,6 +71,9 @@ class BodyKeypointTrack:
             self.mp_hands_model = mp.solutions.hands.Hands(
                 max_num_hands=2,
                 model_complexity=min(model_complexity, 1), 
+
+
+                
                 min_detection_confidence=0.5, 
                 min_tracking_confidence=0.5
             )
@@ -150,7 +153,7 @@ class BodyKeypointTrack:
 
             image_landmarks = np.array([[lm.x * self.im_width, lm.y * self.im_height] for lm in results.multi_hand_landmarks[left_hand_id].landmark])
             world_landmarks = np.array([[lm.x, lm.y, lm.z] for lm in results.multi_hand_world_landmarks[left_hand_id].landmark])
-            visible = np.array([lm.visibility > 0.2 for lm in results.multi_hand_landmarks[left_hand_id].landmark])
+            visible = np.array([lm.visibility >= 0.0 for lm in results.multi_hand_landmarks[left_hand_id].landmark])
 
             if visible.sum() >= 6:
                 print("处理左手的关键点")
@@ -167,9 +170,10 @@ class BodyKeypointTrack:
 
             image_landmarks = np.array([[lm.x * self.im_width, lm.y * self.im_height] for lm in results.multi_hand_landmarks[right_hand_id].landmark])
             world_landmarks = np.array([[lm.x, lm.y, lm.z] for lm in results.multi_hand_world_landmarks[right_hand_id].landmark])
-            visible = np.array([lm.visibility > 0.2 for lm in results.multi_hand_landmarks[right_hand_id].landmark])
+            visible = np.array([lm.visibility >= 0.0 for lm in results.multi_hand_landmarks[right_hand_id].landmark])
 
             if visible.sum() >= 6:
+                print("处理左手的关键点")
                 kpts3d, rvec, tvec = self._get_camera_space_landmarks(image_landmarks, world_landmarks, visible, self.right_hand_rvec, self.right_hand_tvec)
                 if tvec[2] > 0:
                     self.right_hand_kpts2d = image_landmarks

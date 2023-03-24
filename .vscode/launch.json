@@ -14,7 +14,7 @@
             "args" : [
                 
                 "--blend" , "model/ganyu.blend",
-                "--video" , "video/ikun.mp4",
+                "--video" , "video/baike.mp4",
                 // "--track_hands"
 
             ]
