@@ -129,14 +129,14 @@ TARGET_KEYPOINT_PAIRS_WITHOUT_HANDS = [
     ('right_wrist', 'right_elbow'),
 
     # Left hand
-    ('left_wrist', 'left_pinky'),
-    ('left_wrist', 'left_index'),
-    ('left_pinky', 'left_index'),
+    ('left_wrist', 'left_pinky1'),
+    ('left_wrist', 'left_index1'),
+    ('left_pinky1', 'left_index1'),
 
     # Right Hand
-    ('right_wrist', 'right_pinky'),
-    ('right_wrist', 'right_index'),
-    ('right_pinky', 'right_index'),
+    ('right_wrist', 'right_pinky1'),
+    ('right_wrist', 'right_index1'),
+    ('right_pinky1', 'right_index1'),
 
     # Legs
     ('left_hip', 'left_knee'),
@@ -209,22 +209,26 @@ def load_skeleton_data(path: str):
     bone_matrix_world_rest = np.load(os.path.join(path, skeleton['bone_matrix_world']))
     bone_matrix = np.load(os.path.join(path, skeleton['bone_matrix_rel']))
 
+    # 获取默认的骨骼映射表
     skeleton_remap = skeleton['bone_remap']
+    # 将值为none的骨骼映射去掉
     skeleton_remap = {k: v for k, v in skeleton_remap.items() if v is not None}
+    # DEFAULT_BONES使用的mediapipe中的骨骼命名，与模型的bone_names的命名保持一致
     skeleton_remap.update({k: k for k in DEFAULT_BONES if k in bone_names})
 
     return bone_names, bone_parents, bone_matrix_world_rest, bone_matrix, skeleton_remap
 
 
 def get_optimization_target(bone_parents: Dict[str, str], skeleton_remap: Dict[str, str], track_hand: bool):
-    # bones to optimize
+    # OPTIMIZABLE_BONES以mediapipe的骨骼命名，因此optimizable_bones就等于OPTIMIZABLE_BONES
     optimizable_bones = [skeleton_remap[b] for b in OPTIMIZABLE_BONES if b in skeleton_remap]
 
-    # target pairs
+    # kpt_pairs以mediapipe命名
     if track_hand:
         kpt_pairs = [(a, b) for a, b in TARGET_KEYPOINT_PAIRS_WITH_HANDS if a in skeleton_remap and b in skeleton_remap]
     else:
         kpt_pairs = [(a, b) for a, b in TARGET_KEYPOINT_PAIRS_WITHOUT_HANDS if a in skeleton_remap and b in skeleton_remap]
+    # joint_pairs是基于模型关节命名
     joint_pairs = [(skeleton_remap[a], skeleton_remap[b]) for a, b in kpt_pairs]
 
     # Find bones that has target bones as children

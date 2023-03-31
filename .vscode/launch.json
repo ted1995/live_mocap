@@ -14,9 +14,7 @@
             "args" : [
                 
                 "--blend" , "model/ganyu.blend",
-                "--video" , "video/baike.mp4",
-                // "--track_hands"
-
+                "--video" , "video/jackma.mp4",
             ]
         }
     ]

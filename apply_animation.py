@@ -64,10 +64,10 @@ for i in range(len(bone_euler_sequence)):
             bone.keyframe_insert(data_path='rotation_euler', frame=i)
     
     # global location
-    # x, y, z = location_sequence[i].tolist()
-    # # x,y,z是mediapipe的关键点检测，x向右，y向下，z向外
-    # skeleton.location = x, z, -y
-    # skeleton.keyframe_insert(data_path='location', frame=i)
+    x, y, z = location_sequence[i].tolist()
+    # x,y,z是mediapipe的关键点检测，x向右，y向下，z向外
+    skeleton.location = x, z, -y
+    skeleton.keyframe_insert(data_path='location', frame=i)
 
 
 

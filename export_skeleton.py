@@ -19,12 +19,15 @@ def iterbones(bones):
 
 def export_bones(skeleton):
     bones = skeleton.pose.bones
+    # 从根关节开始遍历所有关节
     bone_names = [b.name for b in iterbones(bones)]
+    # 获取所有的关节：父关节字典
     bone_parents = {b: bones[b].parent.name if bones[b].parent is not None else None for b in bone_names}
 
     bone_matrix_rel, bone_matrix_world = [], []
     for bn in bone_names:
         b = bones[bn]
+        # 计算全部骨骼相对于世界坐标系下的变化矩阵
         bone_matrix_world.append(np.array(skeleton.matrix_world @ b.matrix, dtype=np.float32))
         if b.parent is None:
             m = np.array(skeleton.matrix_world @ b.matrix @ b.matrix_basis.inverted(), dtype=np.float32)
