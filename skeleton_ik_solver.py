@@ -83,6 +83,7 @@ class SkeletonIKSolver:
         # load skeleton model data
         all_bone_names, all_bone_parents, all_bone_matrix_world_rest, all_bone_matrix, skeleton_remap = load_skeleton_data(model_path)
         
+        # mediapipe的关键点
         self.keypoints = MEDIAPIPE_KEYPOINTS_WITH_HANDS if track_hands else MEDIAPIPE_KEYPOINTS_WITHOUT_HANDS
 
         # skeleton structure info
@@ -90,7 +91,7 @@ class SkeletonIKSolver:
         self.all_bone_names: List[str] = all_bone_names
         # 所有的骨头：父骨头的字典
         self.all_bone_parents: List[str] = all_bone_parents
-        # 父骨头在所有骨头列表中的索引
+        # 具有父亲的骨头在所有骨头列表中的索引
         self.all_bone_parents_id = torch.tensor([(all_bone_names.index(all_bone_parents[b]) if all_bone_parents[b] is not None else -1) for b in all_bone_parents], dtype=torch.long)
         self.all_bone_matrix: torch.Tensor = torch.from_numpy(all_bone_matrix).float()
   

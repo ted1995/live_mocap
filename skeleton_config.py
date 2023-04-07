@@ -32,8 +32,8 @@ DEFAULT_BONES = [
 OPTIMIZABLE_BONES = [
     'head', 'neck', 'left_collar', 'right_collar', 'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist',
     'pelvis', 'spine1', 'spine2', 'spine3', 'left_hip', 'right_hip', 'left_knee', 'right_knee', 'left_ankle', 'right_ankle',
-    'left_index1', 'left_index2', 'left_index3', 'left_middle1', 'left_middle2', 'left_middle3', 'left_ring1', 'left_ring2', 'left_ring3', 'left_pinky1', 'left_pinky2', 'left_pinky3', 'left_thumb1', 'left_thumb2', 'left_thumb3',
-    'right_index1', 'right_index2', 'right_index3', 'right_middle1', 'right_middle2', 'right_middle3', 'right_ring1', 'right_ring2', 'right_ring3', 'right_pinky1', 'right_pinky2', 'right_pinky3', 'right_thumb1', 'right_thumb2', 'right_thumb3',
+    # 'left_index1', 'left_index2', 'left_index3', 'left_middle1', 'left_middle2', 'left_middle3', 'left_ring1', 'left_ring2', 'left_ring3', 'left_pinky1', 'left_pinky2', 'left_pinky3', 'left_thumb1', 'left_thumb2', 'left_thumb3',
+    # 'right_index1', 'right_index2', 'right_index3', 'right_middle1', 'right_middle2', 'right_middle3', 'right_ring1', 'right_ring2', 'right_ring3', 'right_pinky1', 'right_pinky2', 'right_pinky3', 'right_thumb1', 'right_thumb2', 'right_thumb3',
 ]
 
 
@@ -220,7 +220,7 @@ def load_skeleton_data(path: str):
 
 
 def get_optimization_target(bone_parents: Dict[str, str], skeleton_remap: Dict[str, str], track_hand: bool):
-    # OPTIMIZABLE_BONES以mediapipe的骨骼命名，因此optimizable_bones就等于OPTIMIZABLE_BONES
+    # 获取人体模型中的可优化骨骼
     optimizable_bones = [skeleton_remap[b] for b in OPTIMIZABLE_BONES if b in skeleton_remap]
 
     # kpt_pairs以mediapipe命名
@@ -257,6 +257,7 @@ def get_constraints(bone_names: List[str], bone_matrix_world_rest: np.ndarray, o
     for k, c in BONE_CONSTRAINTS.items():
         if not (k in skeleton_remap and skeleton_remap[k] in optimizable_bones):
             continue
+        # 获取模型骨骼的矩阵
         b = skeleton_remap[k]
         constraint = []
         rest_mat = bone_matrix_world_rest[bone_names.index(b)]

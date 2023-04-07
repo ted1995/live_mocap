@@ -10,7 +10,7 @@ import mediapipe as mp
 width, height = 1280, 720
 
 # Webcam
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture("video/jackma.mp4")
 cap.set(3, width)
 cap.set(4, height)
 
@@ -19,7 +19,7 @@ detector = HandDetector(maxHands=2, detectionCon=0.8)
 
 # Communication
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-serverAddressPort = ("127.0.0.1", 5000)
+serverAddressPort = ("127.0.0.1", 5002)
 
 x = [300, 245, 200, 170, 145, 130, 112, 103, 93, 87, 80, 75, 70, 67, 62, 59, 57]
 y = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]

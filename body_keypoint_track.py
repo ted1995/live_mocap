@@ -50,11 +50,14 @@ WEIGHTS = {
     'right_ankle': 0.02,
 }
 
+
 class BodyKeypointTrack:
     def __init__(self, im_width: int, im_height: int, fov: float, frame_rate: float, *, track_hands: bool = True, model_complexity=1, smooth_range: float = 0.3, smooth_range_barycenter: float = 1.0):
         self.K = intrinsic_from_fov(fov, im_width, im_height)
         self.im_width, self.im_height = im_width, im_height
         self.frame_delta = 1. / frame_rate
+
+        self.global_world_landmarks = []
 
         self.mp_pose_model = mp.solutions.pose.Pose(
             model_complexity=model_complexity, 
@@ -118,6 +121,7 @@ class BodyKeypointTrack:
 
         image_landmarks = np.array([[lm.x * self.im_width, lm.y * self.im_height] for lm in results.pose_landmarks.landmark])
         world_landmarks = np.array([[lm.x, lm.y, lm.z] for lm in results.pose_world_landmarks.landmark])
+        self.global_world_landmarks = [[lm.x * self.im_width, self.im_height - lm.y * self.im_height, lm.z * self.im_width] for lm in results.pose_landmarks.landmark]
         visible = np.array([lm.visibility > 0.2 for lm in results.pose_landmarks.landmark])
 
         if visible.sum() < 6:
@@ -130,7 +134,7 @@ class BodyKeypointTrack:
         self.barycenter = np.average(kpts3d, axis=0, weights=self.barycenter_weight)
         self.pose_kpts3d = kpts3d - self.barycenter
         self.pose_rvec, self.pose_tvec = rvec, tvec
-        self.barycenter_history.append((self.barycenter, t))
+        #self.barycenter_history.append((self.barycenter, t))
         self.pose_history.append((kpts3d, t))
 
     def _track_hands(self, image: np.ndarray, t: float):
@@ -188,12 +192,12 @@ class BodyKeypointTrack:
 
     def get_smoothed_3d_keypoints(self, query_t: float):
         # Get smoothed barycenter
-        barycenter_list = [barycenter for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
-        barycenter_t = [t for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
-        if len(barycenter_t) == 0:
-            barycenter = np.zeros(3)
-        else:
-            barycenter = mls_smooth_numpy(barycenter_t, barycenter_list, query_t, self.smooth_range_barycenter)
+        # barycenter_list = [barycenter for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
+        # barycenter_t = [t for barycenter, t in self.barycenter_history if abs(t - query_t) < self.smooth_range_barycenter]
+        # if len(barycenter_t) == 0:
+        #     barycenter = np.zeros(3)
+        # else:
+        #     barycenter = mls_smooth_numpy(barycenter_t, barycenter_list, query_t, self.smooth_range_barycenter)
 
         # Get smoothed pose keypoints
         pose_kpts3d_list = [kpts3d for kpts3d, t in self.pose_history if abs(t - query_t) < self.smooth_range]
@@ -203,34 +207,34 @@ class BodyKeypointTrack:
         all_kpts3d = pose_kpts3d if pose_kpts3d is not None else np.zeros((len(MEDIAPIPE_POSE_KEYPOINTS), 3))
         all_valid = np.full(len(MEDIAPIPE_POSE_KEYPOINTS), pose_kpts3d is not None)
 
-        if self.track_hands:
-            # Get smoothed left hand keypoints
-            left_hand_kpts3d_list = [kpts3d for kpts3d, t in self.left_hand_history if abs(t - query_t) < self.smooth_range]
-            left_hand_t = [t for kpts3d, t in self.left_hand_history if abs(t - query_t) < self.smooth_range]
-            if any(abs(t - query_t) < self.frame_delta * 0.6 for t in left_hand_t):
-                left_hand_kpts3d = barycenter[None, :] + mls_smooth_numpy(left_hand_t, left_hand_kpts3d_list, query_t, self.smooth_range)
-            else:
-                left_hand_kpts3d = None
+        # if self.track_hands:
+        #     # Get smoothed left hand keypoints
+        #     left_hand_kpts3d_list = [kpts3d for kpts3d, t in self.left_hand_history if abs(t - query_t) < self.smooth_range]
+        #     left_hand_t = [t for kpts3d, t in self.left_hand_history if abs(t - query_t) < self.smooth_range]
+        #     if any(abs(t - query_t) < self.frame_delta * 0.6 for t in left_hand_t):
+        #         left_hand_kpts3d = barycenter[None, :] + mls_smooth_numpy(left_hand_t, left_hand_kpts3d_list, query_t, self.smooth_range)
+        #     else:
+        #         left_hand_kpts3d = None
                 
-            # Get smoothed right hand keypoints
-            right_hand_kpts3d_list = [kpts3d for kpts3d, t in self.right_hand_history if abs(t - query_t) < self.smooth_range]
-            right_hand_t = [t for kpts3d, t in self.right_hand_history if abs(t - query_t) < self.smooth_range]
-            if any(abs(t - query_t) < self.frame_delta * 0.6 for t in right_hand_t):
-                right_hand_kpts3d = barycenter[None, :] + mls_smooth_numpy(right_hand_t, right_hand_kpts3d_list, query_t, self.smooth_range)
-            else:
-                right_hand_kpts3d = None
+        #     # Get smoothed right hand keypoints
+        #     right_hand_kpts3d_list = [kpts3d for kpts3d, t in self.right_hand_history if abs(t - query_t) < self.smooth_range]
+        #     right_hand_t = [t for kpts3d, t in self.right_hand_history if abs(t - query_t) < self.smooth_range]
+        #     if any(abs(t - query_t) < self.frame_delta * 0.6 for t in right_hand_t):
+        #         right_hand_kpts3d = barycenter[None, :] + mls_smooth_numpy(right_hand_t, right_hand_kpts3d_list, query_t, self.smooth_range)
+        #     else:
+        #         right_hand_kpts3d = None
             
-            all_kpts3d = np.concatenate([
-                all_kpts3d,
-                left_hand_kpts3d if left_hand_kpts3d is not None else np.zeros((len(MEDIAPIPE_HAND_KEYPOINTS), 3)),
-                right_hand_kpts3d if right_hand_kpts3d is not None else np.zeros((len(MEDIAPIPE_HAND_KEYPOINTS), 3))
-            ], axis=0)
+        #     all_kpts3d = np.concatenate([
+        #         all_kpts3d,
+        #         left_hand_kpts3d if left_hand_kpts3d is not None else np.zeros((len(MEDIAPIPE_HAND_KEYPOINTS), 3)),
+        #         right_hand_kpts3d if right_hand_kpts3d is not None else np.zeros((len(MEDIAPIPE_HAND_KEYPOINTS), 3))
+        #     ], axis=0)
 
-            all_valid = np.concatenate([
-                all_valid,
-                np.full(len(MEDIAPIPE_HAND_KEYPOINTS), left_hand_kpts3d is not None),
-                np.full(len(MEDIAPIPE_HAND_KEYPOINTS), right_hand_kpts3d is not None)
-            ], axis=0)
+        #     all_valid = np.concatenate([
+        #         all_valid,
+        #         np.full(len(MEDIAPIPE_HAND_KEYPOINTS), left_hand_kpts3d is not None),
+        #         np.full(len(MEDIAPIPE_HAND_KEYPOINTS), right_hand_kpts3d is not None)
+        #     ], axis=0)
         
         return all_kpts3d, all_valid
 
@@ -252,6 +256,9 @@ def show_annotation(image, kpts3d, valid, intrinsic):
         if valid[i] == 0:
             continue
         cv2.circle(annotate_image, (int(kpts2d[i, 0]), int(kpts2d[i, 1])), 2, (0, 0, 255), -1)
+    #cv2.namedWindow('Keypoint annotation', cv2.WINDOW_NORMAL)
+
+    #cv2.moveWindow("Keypoint annotation", 1000, 100)
     cv2.imshow('Keypoint annotation', annotate_image)
 
 def test():
