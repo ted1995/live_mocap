@@ -15,7 +15,6 @@ import mathutils
 import math
 
 import numpy as np
-from cvzone.HandTrackingModule import HandDetector
 import cv2
 import torch
 from tqdm import tqdm
@@ -33,11 +32,6 @@ from stabilizer import Stabilizer
 # Miscellaneous detections (eyes/ mouth...)
 from facial_features import FacialFeatures, Eyes
 
-joint_list = [[18, 17, 0],[19, 18, 17],[20, 19, 18],
-              [14,13,0],[15,14,13],[16,15,14],
-              [10,9,0],[11,10,9],[12,11,10],
-              [6,5,0],[7,6,5],[8,7,6],
-              [2,1,0],[3,2,1],[4,3,2]]  # 手指关节序列
 
 # Introduce scalar stabilizers for pose.
 pose_stabilizers = [Stabilizer(
@@ -64,7 +58,6 @@ mouth_dist_stabilizer = Stabilizer(
 # Facemesh
 detector = FaceMeshDetector()
 
-hand_detector = HandDetector(detectionCon=0.5, maxHands=2)
 
 # extra 10 points due to new attention model (in iris detection)
 iris_image_points = np.zeros((10, 2))
@@ -72,33 +65,6 @@ iris_image_points = np.zeros((10, 2))
 frame_height = 0
 frame_width = 0
 
-def detect_hand1(img):
-    # Find the hand and its landmarks
-    hands, img = hand_detector.findHands(img)  # with draw
-    # hands = detector.findHands(img, draw=False)  # without draw
-    str_right = ""
-    str_left = ""
-    if hands:
-        for hand in hands:
-            handType = hand["type"]  # Handtype Left or Right
-            if handType == 'Left':
-                lmlist = hand["lmList"]  # List of 21 Landmark points
-                lmlist = [[-x[0],frame_height-x[1],-x[2]] for x in lmlist]
-                lmlist = [str(i) for x in lmlist for i in x]
-                str_left = "Left," + ",".join(lmlist)
-            else:
-                lmlist = hand["lmList"]  # List of 21 Landmark points
-                lmlist = [[-x[0],frame_height-x[1],-x[2]] for x in lmlist]
-                lmlist = [str(i) for x in lmlist for i in x]
-                str_right = "Right," + ",".join(lmlist)
-    if str_left and str_right:
-        return str_left + "," + str_right
-    elif str_left and not str_right:
-        return str_left
-    elif not str_left and str_right:
-        return str_right
-    else:
-        return ""
 
 
 def detect_face(img,image_points,pose_estimator):
@@ -152,13 +118,13 @@ def detect_face(img,image_points,pose_estimator):
         mouth_dist_stabilizer.update([mouth_distance])
         steady_mouth_dist = mouth_dist_stabilizer.state[0]
 
-        roll = np.clip(steady_pose[0][1], -np.pi/2, np.pi/2)
+        roll = np.clip(steady_pose[0][1], -np.pi/3, np.pi/3)
         if np.degrees(steady_pose[0][0])<0:
-            pitch = np.clip(-(np.pi + steady_pose[0][0]), -np.pi/2, np.pi/2)
-            yaw =  -np.clip(steady_pose[0][2], -np.pi/2, np.pi/2)
+            pitch = np.clip(-(np.pi + steady_pose[0][0]), -np.pi/3, np.pi/3)
+            yaw =  -np.clip(steady_pose[0][2], -np.pi/3, np.pi/3)
         else:
-            pitch = np.clip(-(-np.pi + steady_pose[0][0]), -np.pi/2, np.pi/2)
-            yaw =  np.clip(steady_pose[0][2], -np.pi/2, np.pi/2)
+            pitch = np.clip(-(-np.pi + steady_pose[0][0]), -np.pi/3, np.pi/3)
+            yaw =  np.clip(steady_pose[0][2], -np.pi/3, np.pi/3)
         print(np.degrees(steady_pose[0][0]))
         print("Roll: %.2f, Pitch: %.2f, Yaw: %.2f" % (roll, pitch, yaw))
 
@@ -197,7 +163,7 @@ def main():
     # with open("tmp/skeleton/skeleton.json",'w') as f:
     #     f.write(json.dumps(js,indent=4))
 
-    cap = cv2.VideoCapture(args.video)
+    cap = cv2.VideoCapture(0)
 
     
     frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -221,7 +187,7 @@ def main():
         im_height=frame_height,
         fov=FOV,
         frame_rate=frame_rate,
-        track_hands=False,
+        track_hands=True,
         smooth_range=20 * (1 / frame_rate), #关键点平滑最近30帧
         smooth_range_barycenter=10 * (1 / frame_rate), #质心平滑最近30帧
     )
@@ -252,13 +218,14 @@ def main():
         if not ret:
             break
 
-        img = frame
-
+        #frame.flags.writeable = False
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
         # Get the body keypoints
         body_keypoint_track.track(frame, frame_t)
-        kpts3d, valid = body_keypoint_track.get_smoothed_3d_keypoints(frame_t)
+        kpts3d, valid, left_hand, right_hand = body_keypoint_track.get_smoothed_3d_keypoints(frame_t)
+
+        kps = [str(i) for k in kpts3d for i in k]
+        res = ",".join(kps)
 
         # Solve the skeleton IK
         skeleton_ik_solver.fit(torch.from_numpy(kpts3d).float(), torch.from_numpy(valid).bool(), frame_t)
@@ -281,10 +248,6 @@ def main():
         frame_i += 1
         frame_t += 1.0 / frame_rate
         bar.update(1)
-        if frame_i == 370:
-            print("comming")
-        # if frame_i >300:
-        #     break
 
         is_face_detected = False
         strlist = []
@@ -292,7 +255,7 @@ def main():
         for b in bone_euler:
             # 替换neck的欧拉角
             if bone_euler.index(b) == 1:
-                temp = detect_face(img, image_points,pose_estimator)
+                temp = detect_face(frame, image_points,pose_estimator)
                 if temp and len(temp)>0:
                     is_face_detected = True
                     b = temp
@@ -306,39 +269,27 @@ def main():
         strlist.append(str1)
 
         #将11-16这六个关键点传输到unity中
-        if body_keypoint_track.global_world_landmarks and len(body_keypoint_track.global_world_landmarks) != 0:
-            for i in range(11,17):
-                str1 = ",".join([str(body_keypoint_track.global_world_landmarks[i][j]) for j in range(0,3)])
-                strlist.append(str1)
+        for i in range(11,17):
+            str1 = ",".join([str(kpts3d[i][j]) for j in range(0,3)])
+            strlist.append(str1)
+
 
         if is_face_detected:
             strlist.append("yes")
         else:
             strlist.append("no")
 
-        # 将左手腕和右手腕的关键点传递到unity中
-        # try:
-        #     for i in range(15,23):
-        #         str1 = ",".join([str(body_keypoint_track.global_world_landmarks[i][j]) for j in range(0,3)])
-        #         strlist.append(str1)
-        # except:
-        #     pass
-
-
-        # joint_angle = detect_hand(img)
-        # if joint_angle:
-        #     str1 = ",".join(joint_angle)
-        # strlist.append(str1)
-
-        for i in skeleton_ik_solver.optimizable_bones:
-            if i == "left_wrist":
-                print(i+":"+strlist[skeleton_ik_solver.optimizable_bones.index(i)])
-
-        tmp = detect_hand1(img)
-        if tmp:
-            res = ",".join(strlist)+","+tmp
-        else:  
-            res = ",".join(strlist)
+        if left_hand is not None and len(left_hand) == 21:
+            lmlist = [[-x[0],frame_height-x[1],-x[2]] for x in left_hand]
+            lmlist = [str(i) for x in lmlist for i in x]
+            str_left = "Left," + ",".join(lmlist)
+            strlist.append(str_left)
+        if right_hand is not None and len(right_hand) == 21:
+            lmlist = [[-x[0],frame_height-x[1],-x[2]] for x in right_hand]
+            lmlist = [str(i) for x in lmlist for i in x]
+            str_right = "Right," + ",".join(lmlist)
+            strlist.append(str_right)
+        res = ",".join(strlist)
 
         print(res)
 

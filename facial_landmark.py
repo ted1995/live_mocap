@@ -33,9 +33,6 @@ class FaceMeshDetector:
         self.drawing_spec = self.mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
     def findFaceMesh(self, img, draw=True):
-        # convert the img from BRG to RGB
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
         img.flags.writeable = False
